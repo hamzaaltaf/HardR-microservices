@@ -68,8 +68,10 @@ class Project(db.Document):
     @classmethod
     def list_user_projects(cls, user):
         projects = cls.get_user_projects(user)
+        print("HERE WE ARE", projects)
         if projects:
-            response_obj = [{"id": str(p.id), "pid": p.pid, "name": p.name, "description": p.description} for p in projects]
+            response_obj = [{"id": str(p.id), "pid": p.pid, "name": p.name, "description": p.description, "user": p.user.email} for p in projects]
+            print("HERE WE ARE", response_obj)
             return response_obj
         else:
             return []
