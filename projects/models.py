@@ -12,6 +12,8 @@ class Project(db.Document):
     name = db.StringField(required = True)
     description = db.StringField(required = True)
     user = db.ReferenceField(User, required = True)
+    total_checked_out = db.IntField(min = 0, default = 0)
+    total_checked_in = db.IntField(min = 0, default = 0)
     created_at = db.DateTimeField()
     updated_at = db.DateTimeField()
     meta = {
@@ -22,10 +24,10 @@ class Project(db.Document):
     }
     
     @classmethod
-    def create_project(cls, pid, name, description, user):
+    def create_project(cls, pid, name, description, user, session):
         new_project = cls(pid = pid, name = name, description = description, user = user, created_at = datetime.datetime.now())
         try: 
-            new_project.save()
+            new_project.save(session = session)
             return new_project, None
         except (ValidationError, DuplicateKeyError, NotUniqueError) as e:
             errors = Utilities.error_formatter(e)
@@ -89,4 +91,7 @@ class Project(db.Document):
         else:
             return None
         
-        
+    @classmethod
+    def project_details(cls, project):
+        response_obj = {"id": str(project.id), "pid": project.pid, "name": project.name, "description": project.description}
+        return response_obj

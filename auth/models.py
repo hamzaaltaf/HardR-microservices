@@ -8,7 +8,7 @@ import jwt
 from datetime import datetime, timedelta
 
 class User(db.Document):
-    email = db.EmailField(required = True, unique = True)
+    email = db.EmailField(required = True)
     password = db.StringField(required = True, min_length  = 8)
     role  = db.StringField()
     name = db.StringField(required = True)
@@ -17,6 +17,10 @@ class User(db.Document):
     meta = {
         'collection': 'users_collection'
     }
+    
+    @classmethod
+    def delete_all_users(cls):
+        cls.objects().delete()
     
     @classmethod
     def list_users(cls):

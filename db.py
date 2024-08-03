@@ -7,4 +7,4 @@ MONGO_SETTINGS = {
 }
 
 def initialize_db():
-    connect(**MONGO_SETTINGS)
+    return connect(**MONGO_SETTINGS)
