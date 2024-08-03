@@ -34,7 +34,6 @@ def sign_in():
 @auth_bp.route('/users/sign_up', methods = ['GET', 'POST'])
 def sign_up():
     params = request.json
-    print("here are params", params)
     if params:
         if not params["email"]:
             return jsonify({"success": False, "errors": "Please send the valid parameters"})

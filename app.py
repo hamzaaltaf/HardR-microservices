@@ -44,7 +44,8 @@ def user_projects():
         user = User.get_user_by_id(params['user_id'])
         if user:
             g.user = user
-            projects = Project.list_user_projects(user)
+            # projects = Project.list_user_projects(user)
+            projects = ProjectMember.get_projects_list(user)
             return jsonify({'success': True, 'projects': projects})
         else:
             return jsonify({'success': False, 'errors': "Invalid Token"})

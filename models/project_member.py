@@ -68,3 +68,13 @@ class ProjectMember(db.Document):
                 return False
         else:
             return False
+
+    @classmethod
+    def get_projects_list(cls, user):
+        projects = cls.objects(user = user)
+        if projects:
+            response_obj = [{"id": str(p.id), "pid": p.project.pid, "name": p.project.name, "description": p.project.description, "user": p.user.email} for p in projects]
+            print("HERE WE ARE", response_obj)
+            return response_obj
+        else:
+            return []
