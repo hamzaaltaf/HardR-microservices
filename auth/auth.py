@@ -45,9 +45,9 @@ def sign_up():
             return jsonify({"success": False, "errors": "Confirm Password cannot be blank"})
         if params["confirm_password"] != params["password"]:
             return jsonify({"success": False, "errors": "Password confirmation must match the entered password"})
-        new_user, errors = User.create_user(params["email"], params["name"].lower(), params["password"], "user")
-        if new_user:
-            return jsonify({"success": True})
+        user, errors = User.create_user(params["email"], params["name"].lower(), params["password"], "user")
+        if user:
+            return jsonify({"success": True, "id": str(user.id), "token": user.token, 'name': user.name.upper(), 'email': user.email })
         else:
             return jsonify({"errors": errors})
     else:
