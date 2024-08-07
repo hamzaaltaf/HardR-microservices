@@ -164,6 +164,8 @@ def check_out():
     user = User.get_user_by_id(params['user_id'])
     if not user:
         return jsonify({'success': False, 'errors': 'Invalid user id'})
+    if hardware_set.availability == 0:
+        return jsonify({'success': False, 'errors': 'This set does not have availability'})
     transaction, errors = Transaction.create_checkout_transaction(int(params['quantity']), user, hardware_set, project)
     if errors:
         return jsonify({'success': False, 'errors': errors})

@@ -73,7 +73,7 @@ class ProjectMember(db.Document):
     def get_projects_list(cls, user):
         projects = cls.objects(user = user)
         if projects:
-            response_obj = [{"id": str(p.id), "pid": p.project.pid, "name": p.project.name, "description": p.project.description, "user": p.user.email} for p in projects]
+            response_obj = [{"id": str(p.id), "pid": p.project.pid, "name": p.project.name, "description": p.project.description, "user": p.user.email, "total_checked_out": p.project.total_checked_out, "total_checked_in": p.project.total_checked_in} for p in projects]
             print("HERE WE ARE", response_obj)
             return response_obj
         else:

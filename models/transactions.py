@@ -37,14 +37,26 @@ class Transaction(db.Document):
         if requested_qty > hardware_set.availability:
             approved_qty = hardware_set.availability
             hardware_set.availability = 0
-            requester.total_checked_out += approved_qty
         else:
-            hardware_set.availability -= requested_qty
-            requester.total_checked_out += requested_qty
-        new_set = cls(requested_qty = requested_qty, approved_qty = approved_qty, user = user, owner = hardware_set, requester = requester, event_type = cls.CHECKOUT)
+            approved_qty = requested_qty
+        # create the transaction
+        new_set = cls(requested_qty = requested_qty,
+                    approved_qty = approved_qty,
+                    user = user,
+                    owner = hardware_set,
+                    requester = requester,
+                    event_type = cls.CHECKOUT
+                )
         try:
+            print("here is the total checkout", hardware_set.availability)
+            new_checked_out = requester.total_checked_out + approved_qty
+            new_availability = hardware_set.availability - approved_qty
+            if new_availability < 0:
+                new_availability = 0
+            print("here is the NEW AVAILABILIUTY", new_availability)
             new_set.save()
-            requester.update(total_checked_out = requester.total_checked_out + approved_qty)
+            hardware_set.update(availability = new_availability)
+            requester.update(total_checked_out = new_checked_out)
             return new_set, None
         except (ValidationError, DuplicateKeyError) as e:
             errors = Utilities.error_formatter(e)
@@ -58,10 +70,18 @@ class Transaction(db.Document):
             return None, "You have no pending items to check in. Please check out items first."
         if requested_qty > current_pending_qty:
             return None, "You cannot return more than what you checked out"
-        new_set = cls(requested_qty = requested_qty, approved_qty = approved_qty, user = user, owner = hardware_set, requester = requester, event_type = cls.CHECKIN)
+        new_set = cls(requested_qty = requested_qty,
+                    approved_qty = approved_qty,
+                    user = user,
+                    owner = hardware_set,
+                    requester = requester,
+                    event_type = cls.CHECKIN)
         try:
             new_set.save()
-            requester.update(total_checked_in = requester.total_checked_in + approved_qty)
+            new_checked_in = requester.total_checked_in + approved_qty
+            new_availability = hardware_set.availability + approved_qty
+            requester.update(total_checked_in = new_checked_in)
+            hardware_set.update(availability = new_availability)
             return new_set, None
         except (ValidationError, DuplicateKeyError) as e:
             errors = Utilities.error_formatter(e)
@@ -109,11 +129,13 @@ class Transaction(db.Document):
     
     @classmethod
     def get_hardware_checkouts(cls, hardware_set):
-        return cls.objects(owner = hardware_set, event_type = cls.CHECKOUT).count()
+        records = cls.objects(owner = hardware_set, event_type = cls.CHECKOUT)
+        return  sum(record['approved_qty'] for record in records) or 0
 
     @classmethod
     def get_hardware_checkins(cls, hardware_set):
-        return cls.objects(owner = hardware_set, event_type = cls.CHECKIN).count()
+        records = cls.objects(owner = hardware_set, event_type = cls.CHECKIN)
+        return  sum(record['approved_qty'] for record in records) or 0
     
     @classmethod
     def get_hardware_transactions_objects(cls, hardware_set):
