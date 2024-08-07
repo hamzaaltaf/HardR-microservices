@@ -1,3 +1,4 @@
+import certifi
 from mongoengine import connect, disconnect
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
@@ -7,4 +8,5 @@ def initialize_db():
     # Disconnect any existing connection
     disconnect(alias='default')
     # MongoDB Atlas URI should include the database name (flask_db in this case)
-    return connect(host=uri, alias='default', server_api=ServerApi('1'))
+    return connect(host=uri, alias='default', server_api=ServerApi('1'), tlsCAFile=certifi.where())
+    # return connect(host=uri, alias='default', server_api=ServerApi('1'))
