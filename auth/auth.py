@@ -24,7 +24,14 @@ def sign_in():
         print("here is encrypted", encrypt(params["password"]))
         is_valid = validate_password(user.password, params["password"])
         if is_valid:
-            return jsonify({"success": True, "id": str(user.id), "token": user.token, 'name': user.name.upper(), 'email': user.email })
+            return jsonify({
+                "success": True,
+                "id": str(user.id),
+                "token": user.token,
+                "role": user.role,
+                'name': user.name.upper(),
+                'email': user.email 
+            })
         else:
             return jsonify({"success": False, "errors": "Incorrect email or password"})
     else:

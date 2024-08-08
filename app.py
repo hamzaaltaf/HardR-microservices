@@ -122,7 +122,16 @@ def list_project_members():
 # APIs for hardware set
 @app.route('/list_sets', methods = ["GET"])
 def list_hardware():
-    return jsonify({'success': True, 'sets': HardwareSet.get_all_hardware_set_objects()})
+    user_id = request.args.get('user')
+    if not user_id:
+        return jsonify({'success': False, 'errors': 'User ID is required'}), 400
+
+    userLog = User.get_user_by_id(user_id)
+    if not userLog:
+        return jsonify({'success': False, 'errors': 'User not found'}), 404
+
+    sets = HardwareSet.get_all_hardware_set_objects()
+    return jsonify({'success': True, 'sets': sets, 'type_access': userLog["role"]})
 
 @app.route('/create_hardware', methods = ["POST"])
 def create_hardware():
@@ -131,12 +140,36 @@ def create_hardware():
         return jsonify({'success': False, 'errors': 'Name is required'})
     if 'capacity' not in params:
         return jsonify({'success': False, 'errors': 'Capacity is required'})
-    if 'user_id' not in params:
+    if 'user' not in params:
         return jsonify({'success': False, 'errors': 'User ID is required'})
-    user = User.get_user_by_id(params['user_id'])
-    if not user:
-        return jsonify({'success': False, 'errors': 'Invalid user id'})
-    hardware, errors = HardwareSet.create_hardware_set(int(params['capacity']), params['name'], user)
+    
+    userLog = User.get_user_by_id(params['user'])
+    if userLog["role"] != "admin":
+        return jsonify({'success': False, 'errors': 'Only users with the admin role can create new hardware.'})
+    if bool(HardwareSet.get_existing_hardware(params['name'])):
+        return jsonify({'success': False, 'errors': 'Hardware set already exists'})
+    hardware, errors = HardwareSet.create_hardware_set(int(params['capacity']), params['name'], params['user'])
+    if errors:
+        return jsonify({'success': False, 'errors': errors})
+    return jsonify({'success': True, 'sets': HardwareSet.get_all_hardware_set_objects()})
+
+@app.route('/update_hardware', methods = ["POST"])
+def update_hardware():
+    params = request.get_json()
+    if 'name' not in params:
+        return jsonify({'success': False, 'errors': 'Name is required'})
+    if 'capacity' not in params:
+        return jsonify({'success': False, 'errors': 'Capacity is required'})
+    if 'user' not in params:
+        return jsonify({'success': False, 'errors': 'User ID is required'})
+    
+    userLog = User.get_user_by_id(params['user'])
+    if userLog["role"] != "admin":
+        return jsonify({'success': False, 'errors': 'Only users with the admin role can create new hardware.'})  
+    if bool(HardwareSet.get_existing_hardware(params['name'])) == False:
+        return jsonify({'success': False, 'errors': 'Hardware set does not exist'})
+    
+    hardware, errors = HardwareSet.update_hardware_set(params['name'], int(params['capacity']))
     if errors:
         return jsonify({'success': False, 'errors': errors})
     return jsonify({'success': True, 'sets': HardwareSet.get_all_hardware_set_objects()})
