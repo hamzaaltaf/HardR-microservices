@@ -22,7 +22,11 @@ class HardwareSet(db.Document):
     @classmethod
     def get_hardware_set(cls, id):
         return cls.objects(id = id).first()
-    
+
+    @classmethod
+    def get_existing_hardware(cls, name):
+        return cls.objects(name=name).first()
+        
     @classmethod
     def create_hardware_set(cls, capacity, name, user = None):
         # if user and user.role != 'admin':
@@ -67,7 +71,26 @@ class HardwareSet(db.Document):
                 return False
         else:
             return False
-    
+
+    @classmethod
+    def update_hardware_set(cls, name, capacity):
+        hardware_set = cls.get_existing_hardware(name = name)
+
+        if not hardware_set:
+            return None, "Hardware set not found."
+
+        if hardware_set['availability'] > capacity:
+            return None, "Capacity cannot be less than availability."
+
+        try: 
+            res = capacity - hardware_set['capacity']
+            availability = hardware_set['availability'] + res
+            updated = hardware_set.update(capacity = capacity, availability = availability)
+            return updated, None
+        except (ValidationError, DuplicateKeyError) as e:
+            errors = Utilities.error_formatter(e)
+            return None, errors
+            
     def update_availability(self, availability):
         updated = self.update(availability =  availability)
         if updated:
