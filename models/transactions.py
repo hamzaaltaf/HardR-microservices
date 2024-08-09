@@ -65,11 +65,18 @@ class Transaction(db.Document):
     @classmethod
     def create_checkin_transaction(cls, requested_qty, user, hardware_set, requester):
         approved_qty = requested_qty
-        current_pending_qty = (requester.total_checked_out or 0) - (requester.total_checked_in or 0)
+        
+        # current_pending_qty = (requester.total_checked_out or 0) - (requester.total_checked_in or 0)
+        current_pending_qty = Transaction.get_project_and_hardware_checkouts(hardware_set, requester)
+        print("Thi is current quantity", current_pending_qty)
+        print("Thi is requested quantityt", requested_qty)
+        # if requested_qty > hardware_set.capacity:
+        #     return None, "You cannot check in more than capacity."
         if current_pending_qty == 0:
             return None, "You have no pending items to check in. Please check out items first."
         if requested_qty > current_pending_qty:
             return None, "You cannot return more than what you checked out"
+        # project_checked_out = 
         new_set = cls(requested_qty = requested_qty,
                     approved_qty = approved_qty,
                     user = user,
@@ -129,13 +136,26 @@ class Transaction(db.Document):
     
     @classmethod
     def get_hardware_checkouts(cls, hardware_set):
-        records = cls.objects(owner = hardware_set, event_type = cls.CHECKOUT)
-        return  sum(record['approved_qty'] for record in records) or 0
+        ck_out_records = cls.objects(owner = hardware_set, event_type = cls.CHECKOUT)
+        ck_in_records = cls.objects(owner = hardware_set, event_type = cls.CHECKIN)
+        ck_out = sum(record['approved_qty'] for record in ck_out_records) or 0
+        ck_in = sum(record['approved_qty'] for record in ck_in_records) or 0
+        result = ck_out - ck_in
+        if result < 0: 
+            result = 0
+        return result
 
     @classmethod
     def get_hardware_checkins(cls, hardware_set):
         records = cls.objects(owner = hardware_set, event_type = cls.CHECKIN)
         return  sum(record['approved_qty'] for record in records) or 0
+    
+    @classmethod
+    def get_project_and_hardware_checkouts(cls, hardware_set, project):
+        records = cls.objects(owner = hardware_set, event_type = cls.CHECKOUT, requester = project)
+        projects_total_checkouts = sum(record['approved_qty'] for record in records) or 0
+        return projects_total_checkouts
+    
     
     @classmethod
     def get_hardware_transactions_objects(cls, hardware_set):
